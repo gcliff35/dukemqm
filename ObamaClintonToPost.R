@@ -41,8 +41,8 @@ election_data_test <- election_data[election_data$ElectionDate >= as.Date("2/19/
 
 # If you want to write these data sets back out into spreadsheets, 
 # use the following "write" commands in R.
-# write.csv(electionDataTrain, "electionDataTrain.csv")
-# write.csv(electionDataTest, "electionDataTest.csv")
+write.csv(election_data_train, "electionDataTrain.csv")
+write.csv(election_data_test, "electionDataTest.csv")
 
 ##########################################################
 ### End of Data Cleaning up
@@ -73,6 +73,21 @@ names(election_data_train)
 trainIndex1 <- createDataPartition(election_data_train$Obama_margin_percent, p = 0.8, list = FALSE)
 train1 <- election_data_train[trainIndex1, ] #80%
 test1 <- election_data_train[-trainIndex1, ] #20%
+
+train1$FIPS <- as_factor(train1$FIPS)
+train1$TotalVote <- as_factor(train1$TotalVote)
+train1$Obama <- as_factor(train1$Obama)
+train1$Clinton <- as_factor(train1$Clinton)
+train1$Obama_margin <- as_factor(train1$Obama_margin)
+train1$Obama_wins <- as_factor(train1$Obama_wins)
+train1$State <- as_factor(train1$State)
+train1$County <- as_factor(train1$County)
+train1$Region <- as_factor(train1$Region)
+
+
+install.packages("glmnet")
+library(glmnet)
+
 
 ###
 ### Question 3: Keep in mind that unsupervised learning 
