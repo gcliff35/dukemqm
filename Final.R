@@ -12,7 +12,7 @@ library(tree)
 library(randomForest)
 
 ###START###
-#####SPLITTING######
+#####SPLITTING######hello
 set.seed(123456)
 trainIndex <- createDataPartition(loan$Default, p = 0.70, list = FALSE)
 train <- loan[trainIndex, ]
