@@ -12,16 +12,17 @@ election_data$FIPS <- as.factor(election_data$FIPS)
 election_data$Region <- as.factor(election_data$Region)
 election_data$ElectionType <- as.factor(election_data$ElectionType)
 
+#Split the original file
+election_data$ElectionDate <- as.Date(election_data$ElectionDate, format="%m/%d/%Y")
+election_data_train <- election_data[election_data$ElectionDate < as.Date("2/19/2008", format="%m/%d/%Y"), ]
+election_data_test <- election_data[election_data$ElectionDate >= as.Date("2/19/2008", format="%m/%d/%Y"), ]
+
 #Add margins
 election_data_train$Obama_margin <- election_data_train$Obama - election_data_train$Clinton
 election_data_train$Obama_margin_percent <- 100*election_data_train$Obama_margin/election_data_train$TotalVote
 election_data_train$Obama_wins <- ifelse(election_data_train$Obama_margin >0, 1,0)
 names(election_data_train)
 
-#Split the original file
-election_data$ElectionDate <- as.Date(election_data$ElectionDate, format="%m/%d/%Y")
-election_data_train <- election_data[election_data$ElectionDate < as.Date("2/19/2008", format="%m/%d/%Y"), ]
-election_data_test <- election_data[election_data$ElectionDate >= as.Date("2/19/2008", format="%m/%d/%Y"), ]
 
 ###Question 2###
 #Split the training data for OOS
@@ -30,11 +31,37 @@ train_indices <- sample(1:nrow(election_data_train), 0.8 * nrow(election_data_tr
 train_data_OOS <- election_data_train[train_indices, ]
 test_data_OOS <- election_data_train[-train_indices, ]  
 
+glm <- glm(Obama_margin_percent ~., data = train_data_OOS)
+summary(glm)
+
+#OOS Predictions
+predicted_margins_OOS <- predict(glm, newdata=test_data_OOS)
+residuals_OOS <- test_data_OOS$Obama_margin_percent - predicted_margins_OOS
+MAE_OOS <- mean(abs(residuals_OOS))
+MSE_OOS <- mean(residuals_OOS^2)
+RMSE_OOS <- sqrt(MSE)
+R2_OOS <- 1 - sum(residuals_OOS^2) / sum((test_data_OOS$Obama_margin_percent - mean(test_data_OOS$Obama_margin_percent))^2)
+plot(predicted_margins_OOS, residuals_OOS, main="Residuals vs Predicted", xlab="Predicted Values", ylab="Residuals")
+abline(h=0, col="red")
+
+#Test data Predictions
+predicted_margins_test <- predict(glm, newdata=election_data_test)
+residuals_test <- test_data_OOS$Obama_margin_percent - predicted_margins_OOS
+MAE_OOS <- mean(abs(residuals_OOS))
+MSE_OOS <- mean(residuals_OOS^2)
+RMSE_OOS <- sqrt(MSE)
+R2_OOS <- 1 - sum(residuals_OOS^2) / sum((test_data_OOS$Obama_margin_percent - mean(test_data_OOS$Obama_margin_percent))^2)
+plot(predicted_margins_OOS, residuals_OOS, main="Residuals vs Predicted", xlab="Predicted Values", ylab="Residuals")
+abline(h=0, col="red")
+
+
+
+
 
 #Column deletion
-test_data <- subset(test_data, select = -c(County, State, Region, FIPS))
-train_data <- subset(test_data, select = -c(County, State, Region, FIPS))
-election_data_test <- subset(election_data_test, select = -c(County, State, Region, FIPS))
+test_data_OOS <- subset(test_data_OOS, select = -c(County, State, Region, FIPS,TotalVote,Obama,Clinton))
+train_data_OOS <- subset(train_data_OOS, select = -c(County, State, Region, FIPS, TotalVote, Obama, Clinton))
+election_data_test <- subset(election_data_test, select = -c(County, State, Region, FIPS, TotalVote, Obama, Clinton))
 
 #Total vote count
 a <- model.matrix(TotalVote ~ . - 1, train_data)
