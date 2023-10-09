@@ -43,3 +43,8 @@ n <- count(data_clean)
 
 test_data <- data_clean[1:63836,]
 train_data <- data_clean[63837:255347,]
+
+##Linear model##
+linear <- lm(Default ~ ., data = train_data)
+summary(linear)
+linear_pred <- predict(linear, newdata = test_data)
