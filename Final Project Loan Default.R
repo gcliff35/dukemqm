@@ -9,6 +9,8 @@ library(rpart.plot)
 library(caret)
 library(tree)
 library(randomForest)
+library(corrplot)
+library(RColorBrewer)
 
 ##Load file##
 data <- read_excel("Loan Default Data Science Project.xlsx")
@@ -43,6 +45,12 @@ n <- count(data_clean)
 
 test_data <- data_clean[1:63836,]
 train_data <- data_clean[63837:255347,]
+
+##Correlation##
+Corr <- cor(data_clean)
+Corr
+CorrplotColor <- brewer.pal(n = 8, name = "BrBG")
+corrplot(Corr, method = "color",col = CorrplotColor, tl.col = "black")
 
 ##Linear model##
 linear <- lm(Default ~ ., data = train_data)
