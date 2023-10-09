@@ -10,24 +10,36 @@ library(caret)
 library(tree)
 library(randomForest)
 
-##Naming file##
-loan <- Loan_Default_Data_Science_Project
+##Load file##
+data <- read_excel("Loan Default Data Science Project.xlsx")
+
+##Drop Loan ID##
+data_drop <- c("LoanID")
+data_clean <- data[, !names(data) %in% data_drop]
 
 ##Set factors##
-loan$Default <- as.factor(loan$Default)
-loan$Education <- as.factor(loan$Education)
-loan$EmploymentType <- as.factor(loan$EmploymentType)
-loan$MaritalStatus <- as.factor(loan$MaritalStatus)
-loan$LoanPurpose <- as.factor(loan$LoanPurpose)
-loan$HasCoSigner <- as.factor(loan$HasCoSigner)
-loan$HasDependents <- as.factor(loan$HasDependents)
-loan$HasMortgage <- as.factor(loan$HasMortgage)
+data_clean$HasMortgage <- ifelse(data_clean$HasMortgage == "Yes", 1, 0)
+data_clean$HasDependents <- ifelse(data_clean$HasDependents == "Yes", 1, 0)
+data_clean$HasCoSigner <- ifelse(data_clean$HasCoSigner == "Yes", 1, 0)
 
-##Splitting file##
-set.seed(123456)
-trainIndex <- createDataPartition(loan$Default, p = 0.70, list = FALSE)
-train <- loan[trainIndex, ]
-test <- loan[-trainIndex, ]
-prop.table(table(train$Default))
-prop.table(table(test$Default))
+education_mapping <- c("High School"= 1, "Bachelor's" = 2, "Master's" = 3, "PhD" = 4)
+data_clean$Education <- as.integer(factor(data_clean$Education, levels = names(education_mapping)))
 
+EmploymentType_mapping <- c("Unemployed" = 0, "Self-employed" = 1,"Part-time" = 2, "Full-time" = 3)
+data_clean$EmploymentType <- as.integer(factor(data_clean$EmploymentType, levels = names(EmploymentType_mapping)))
+
+MaritalStatus_Mapping <- c("Single" = 0, "Divorced" = 1, "Married" = 2)
+data_clean$MaritalStatus <- as.integer(factor(data_clean$MaritalStatus, levels = names(MaritalStatus_Mapping)))
+
+LoanPurpose_mapping <- c("Other" = 0, "Auto" = 1, "Education" = 2, "Home" = 3, "Business" = 4)
+data_clean$LoanPurpose <- as.integer(factor(data_clean$LoanPurpose, levels = names(LoanPurpose_mapping)))
+
+data_clean
+
+##OOS Split##
+n <- count(data_clean)
+(n-n%%3)/4/n
+# 63836
+
+test_data <- data_clean[1:63836,]
+train_data <- data_clean[63837:255347,]
