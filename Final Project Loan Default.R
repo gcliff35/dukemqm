@@ -113,6 +113,30 @@ odds_income
 income_plot <- ggplot(odds_income, aes(x = incomes, y = odds)) + geom_line()
 income_plot
 
+odds_function_loan <- function(y){
+  exp(-4.267e-06 * (y))
+}
+
+loans <- c(5000, 15000, 30000, 45000, 60000, 75000, 90000, 105000, 120000, 135000, 150000, 165000, 180000, 195000, 210000, 225000, 240000, 255000)
+loans <- as.data.frame(loans)
+odds_loan <- loans %>%
+  mutate(odds2 = (odds_function_loan(loans)))
+odds_loan
+loan_plot <- ggplot(odds_loan, aes(x = loans, y = odds2)) + geom_line()
+loan_plot
+
+odds_function_cs <- function(z){
+  exp(-7.893e-04 * (z))
+}
+
+scores <- c(300, 330, 360, 390, 420, 450, 480, 510, 540, 570, 600, 630, 660, 690, 720, 750, 780, 810, 840, 870)
+scores <- as.data.frame(scores)
+odds_scores <- scores %>%
+  mutate(odds3 = (odds_function_cs(scores)))
+odds_scores
+scores_plot <- ggplot(odds_scores, aes(x = scores, y = odds3)) + geom_line()
+scores_plot
+
 ##Random forest##
 library(randomForest)
 train_data$Default <- as.factor(train_data$Default)
