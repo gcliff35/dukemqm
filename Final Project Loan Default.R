@@ -13,6 +13,16 @@ library(corrplot)
 library(RColorBrewer)
 library(readxl)
 library(keras)
+library(glmnet)
+library(stringr)
+
+##Support function##
+support<- function(x, tr = 10e-6) {
+  m<- rep(0, length(x))
+  for (i in 1:length(x)) if( abs(x[i])> tr ) m[i]<- i
+  m <- m[m>0]
+  m
+}
 
 ##Load file##
 data <- read_excel("Loan Default Data Science Project.xlsx")
@@ -59,6 +69,7 @@ linear <- lm(Default ~ ., data = train_data)
 summary(linear)
 linear_pred <- predict(linear, newdata = test_data)
 linear_pred
+
 ##Evaluate linear model##
 residuals_linear <- residuals(linear)
 MAE_linear <- mean(abs(residuals_linear))
@@ -69,8 +80,7 @@ RMSE_linear <- sqrt(MSE_linear)
 RMSE_linear
 plot(linear, which = 1)
 
-
-##Confusion matrix##
+##Linear confusion matrix##
 binary_linear <- as.factor(ifelse(linear_pred > 0.5, 1, 0))
 head(binary_linear, n = 30)
 binary_linear <- as.factor(binary_linear)
@@ -116,8 +126,47 @@ binary_forest <- as.factor(binary_forest)
 test_data$Default <- as.factor(test_data$Default)
 set.seed(1234)
 confusionMatrix(data = binary_forest, reference = test_data$Default)
+confusion_logistic <- confusionMatrix(logistic_pred, test_data$Default)
+cm_log = table(test_data$Default, logistic_pred)
+print(cm_log)
 
 confusion <- confusionMatrix(randomForest_pred, test_data$Default)
 print(confusion)
 
+##Lasso##
+Mx<- model.matrix(Default ~ ., data=data_clean)[,-1]
+My<- data_clean$Default
+
+num.features <- ncol(Mx)
+num.n <- nrow(Mx)
+num.default <- sum(My)
+w <- (num.default/num.n)*(1-(num.default/num.n))
+lambda.theory <- sqrt(w*log(num.features/0.05)/num.n)
+lassoTheory <- glmnet(Mx,My, family="binomial",lambda = lambda.theory)
+summary(lassoTheory)
+support(lassoTheory$beta)
+colnames(Mx)[support(lassoTheory$beta)]
+### there are in total
+length(support(lassoTheory$beta))
+
+
+lassoCV <- cv.glmnet(Mx,My, family="binomial")
+summary(lassoCV)
+
+plot(lassoCV, main="Fitting Graph for CV Lasso \n \n # of non-zero coefficients  ", xlab = expression(paste("log(",lambda,")")))
+
+optimal_lambda <- lassoCV$lambda.min
+lasso_optLambda <- glmnet(Mx,My, family="binomial",lambda = optimal_lambda)
+length(support(lasso_optLambda$beta))
+
+select_variables <- names(data_clean)[support(lasso_optLambda$beta)]
+selected_vars <- paste(select_variables, collapse = " + ")
+formula <- as.formula(paste("Default ~", selected_vars))
+
+logisticRegression_lasso <- glm(formula, data = train_data, family = "binomial")
+LassoLogistic_pred <- predict(logisticRegression_lasso, newdata = test_data, type = "response")
+LassoLogistic_pred <- ifelse(LassoLogistic_pred > 0.5, 1, 0)
+
+confusion_matrix = table(test_data$Default, LassoLogistic_pred)
+print(confusion_matrix)
 
